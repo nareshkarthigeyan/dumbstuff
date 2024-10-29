@@ -1,0 +1,1 @@
+/usr/bin/clang -std=gnu++14 -lstdc++ -fcolor-diagnostics -fansi-escape-codes -g /Users/naresh/naresh/cs/code/dumbstuff/sortingWC/sortWC.cpp -o /Users/naresh/naresh/cs/code/dumbstuff/sortingWC/sortWC
