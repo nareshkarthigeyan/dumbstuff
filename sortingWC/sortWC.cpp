@@ -334,10 +334,228 @@ class HeapSort : public Algorithm {
         if (time > slowest) slowest = time;
     }
 };
+class ThreeWayMergeSort : public Algorithm {
+    private:
+    void merge(vector<int> &gArray, int low, int mid1, int mid2, int high, vector<int> &destArray) 
+    { 
+        int i = low, j = mid1, k = mid2, l = low; 
+        while ((i < mid1) && (j < mid2) && (k < high)) { 
+            if(gArray[i] < gArray[j]){
+                if(gArray[i] < gArray[k]){
+                    destArray[l++] = gArray[i++];
+                }
+                else{
+                    destArray[l++] = gArray[k++];
+                }
+            }
+            else{
+                if(gArray[j] < gArray[k]){
+                    destArray[l++] = gArray[j++];
+                }
+                else{
+                    destArray[l++] = gArray[k++];
+                }
+            }
+        } 
+
+        while ((i < mid1) && (j < mid2)) { 
+            if(gArray[i] < gArray[j]){
+                destArray[l++] = gArray[i++];
+            }
+            else {
+                destArray[l++] = gArray[j++];
+            }
+        } 
+        while ((j < mid2) && (k < high)) { 
+            if(gArray[j] < gArray[k]){
+                destArray[l++] = gArray[j++];
+            }
+            else{
+                destArray[l++] = gArray[k++];
+            } 
+        } 
+
+        while ((i < mid1) && (k < high)) { 
+            if(gArray[i] < gArray[k]){
+                destArray[l++] = gArray[i++];
+            }
+            else{
+                destArray[l++] = gArray[k++];
+            } 
+        } 
+        while (i < mid1) 
+            destArray[l++] = gArray[i++]; 
+    
+        while (j < mid2) 
+            destArray[l++] = gArray[j++]; 
+    
+        while (k < high) 
+            destArray[l++] = gArray[k++]; 
+    } 
+
+    void mergeSort3WayRec(vector<int> &gArray, int low, int high, vector<int> &destArray) { 
+        if (high - low < 2) 
+            return; 
+
+        int mid1 = low + ((high - low) / 3); 
+        int mid2 = low + 2 * ((high - low) / 3) + 1; 
+
+        mergeSort3WayRec(destArray, low, mid1, gArray); 
+        mergeSort3WayRec(destArray, mid1, mid2, gArray); 
+        mergeSort3WayRec(destArray, mid2, high, gArray); 
+
+        merge(destArray, low, mid1, mid2, high, gArray); 
+    }
+    
+    void mergeSort3Way(vector<int> &gArray, int n) 
+    { 
+
+        if (n == 0) 
+            return; 
+    
+        vector<int> fArray(n); 
+
+        for (int i = 0; i < n; i++) 
+            fArray[i] = gArray[i]; 
+
+        mergeSort3WayRec(fArray, 0, n, gArray); 
+
+        for (int i = 0; i < n; i++) 
+            gArray[i] = fArray[i]; 
+    } 
 
 
+    public:
+    ThreeWayMergeSort() : Algorithm("3-Way Merge", 8) {};
+
+
+    void sort(vector<int> a){
+        auto start = chrono::high_resolution_clock::now();
+
+        //Algorithm: 
+        int size = a.size();
+        mergeSort3Way(a, size);
+
+        
+        auto end = chrono::high_resolution_clock::now();
+        chrono::duration<double, milli> duration = end - start;
+        double time = duration.count();
+        current = time;
+        if (time < fastest) fastest = time;
+        if (time > slowest) slowest = time;
+    }
+};
+class RadixSort : public Algorithm {
+private:
+    int getMax(vector<int> &arr, int n)
+    {
+        int mx = arr[0];
+        for (int i = 1; i < n; i++)
+            if (arr[i] > mx)
+                mx = arr[i];
+        return mx;
+    }
+
+    // A function to do counting sort of arr[]
+    // according to the digit
+    // represented by exp.
+    void countSort(vector<int> &arr, int n, int exp)
+    {
+
+        // Output array
+        int output[n];
+        int i, count[10] = { 0 };
+
+        // Store count of occurrences
+        // in count[]
+        for (i = 0; i < n; i++)
+            count[(arr[i] / exp) % 10]++;
+
+        // Change count[i] so that count[i]
+        // now contains actual position
+        // of this digit in output[]
+        for (i = 1; i < 10; i++)
+            count[i] += count[i - 1];
+
+        // Build the output array
+        for (i = n - 1; i >= 0; i--) {
+            output[count[(arr[i] / exp) % 10] - 1] = arr[i];
+            count[(arr[i] / exp) % 10]--;
+        }
+
+        // Copy the output array to arr[],
+        // so that arr[] now contains sorted
+        // numbers according to current digit
+        for (i = 0; i < n; i++)
+            arr[i] = output[i];
+    }
+
+    // The main function to that sorts arr[]
+    // of size n using Radix Sort
+    void radixsort(vector<int> &arr, int n)
+    {
+
+        // Find the maximum number to
+        // know number of digits
+        int m = getMax(arr, n);
+
+        // Do counting sort for every digit.
+        // Note that instead of passing digit
+        // number, exp is passed. exp is 10^i
+        // where i is current digit number
+        for (int exp = 1; m / exp > 0; exp *= 10)
+            countSort(arr, n, exp);
+    }
+
+public:
+    RadixSort() : Algorithm("Radix Sort", 8) {}
+
+    void sort(vector<int> a) { 
+        auto start = chrono::high_resolution_clock::now();
+        int size = a.size();
+        radixsort(a, size);
+        auto end = chrono::high_resolution_clock::now();
+        chrono::duration<double, milli> duration = end - start;
+        double time = duration.count();
+        current = time;
+        if (time < fastest) fastest = time;
+        if (time > slowest) slowest = time;
+    }
+};
+
+class CountingSort : public Algorithm {
+    public:
+    CountingSort() : Algorithm("Counting Sort", 2) {};
+
+    void sort(vector<int> a){
+        auto start = chrono::high_resolution_clock::now();
+
+        //Algorithm: 
+        int N = a.size();
+        int M = 0;
+        for (int i = 0; i < N; i++)
+            M = max(M, a[i]);
+        vector<int> countArray(M + 1, 0);
+        for (int i = 0; i < N; i++)
+            countArray[a[i]]++;
+        for (int i = 1; i <= M; i++)
+            countArray[i] += countArray[i - 1];
+        vector<int> outputArray(N);
+        for (int i = N - 1; i >= 0; i--){
+            outputArray[countArray[a[i]] - 1] = a[i];
+            countArray[a[i]]--;
+        }
+
+        auto end = chrono::high_resolution_clock::now();
+        chrono::duration<double, milli> duration = end - start;
+        double time = duration.count();
+        current = time;
+        if (time < fastest) fastest = time;
+        if (time > slowest) slowest = time;
+    }
+};
 class Tournament {
-
+    int matchNo = 1;
      vector<Algorithm*> algorithms;
 
 public:
@@ -349,6 +567,9 @@ public:
         algorithms.push_back(new QuickSort());
         algorithms.push_back(new HeapSort());
         algorithms.push_back(new CycleSort());
+        algorithms.push_back(new ThreeWayMergeSort());
+        algorithms.push_back(new CountingSort());
+        algorithms.push_back(new RadixSort());
     }
 
     ~Tournament() {
@@ -390,7 +611,6 @@ public:
     }
 
     void roundRobin(vector<int> a){
-        int matchNo = 1;
         for (size_t i = 0; i < algorithms.size(); i++){
             for(size_t j = 0; j < algorithms.size(); j++){
                 if( i != j){
@@ -425,7 +645,7 @@ public:
     int position = 1;
     for (const auto &alg : sortedAlgorithms) {
         std::cout << std::setw(3) << position++ << "\t" 
-                  << std::setw(12) << alg->name << "\t" 
+                  << std::setw(15) << alg->name << "\t" 
                   << std::setw(7) << alg->matches << "\t" 
                   << std::setw(4) << alg->wins << "\t" 
                   << std::setw(6) << alg->losses << "\t" 
@@ -456,11 +676,29 @@ void readFile(const string& filename, vector<int>& arr){
 
 int main(void){
     vector<int> arr;
-    string filename = "input.txt";
-    readFile(filename, arr);
+
+
 
    Tournament tourney;
+   arr.clear();
+   readFile("sorted.txt", arr);
+
    tourney.roundRobin(arr);
+
+   cout << "END OF SORTED ROUND" << endl;
+
+   arr.clear();
+   readFile("reverse.txt", arr);
+
    tourney.roundRobin(arr);
+
+   cout << "END OF REVERSE ROUND" << endl;
+
+   arr.clear();
+   readFile("input.txt", arr);
+
+   tourney.roundRobin(arr);
+   cout << "END OF REVERSE ROUND" << endl;
+
    tourney.printLeaderboard();
 }
