@@ -532,6 +532,399 @@ class RadixSort : public Algorithm {
         if (time > slowest) slowest = time;
     }
 };
+class BucketSort : public Algorithm {
+    private:
+    void bucketSort(vector<int>& arr) {
+        if (arr.empty()) return;
+
+        // Find min and max values
+        int minVal = arr[0], maxVal = arr[0];
+        for (int num : arr) {
+            minVal = min(minVal, num);
+            maxVal = max(maxVal, num);
+        }
+
+        // Number of buckets = sqrt(array size)
+        int n = arr.size();
+        int bucketCount = sqrt(n) + 1;
+        
+        // Create buckets
+        vector<vector<int>> buckets(bucketCount);
+
+        // Range for distributing elements
+        double range = (maxVal - minVal + 1.0) / bucketCount;
+        if (range < 1) range = 1;
+
+        // Distribute elements into buckets
+        for (int num : arr) {
+            int bucketIndex = (num - minVal) / range;
+            if (bucketIndex >= bucketCount) bucketIndex = bucketCount - 1;
+            buckets[bucketIndex].push_back(num);
+        }
+
+        // Sort individual buckets
+        for (auto& bucket : buckets) {
+            std::sort(bucket.begin(), bucket.end());
+        }
+
+        // Concatenate all buckets into original array
+        int index = 0;
+        for (const auto& bucket : buckets) {
+            for (int num : bucket) {
+                arr[index++] = num;
+            }
+        }
+    }
+
+    public:
+    BucketSort() : Algorithm("Bucket Sort", 9) {};
+
+    void sort(vector<int> a) {
+        auto start = chrono::high_resolution_clock::now();
+        
+        try {
+            // Create a working copy
+            vector<int> temp = a;
+            bucketSort(temp);
+        } catch (const std::exception& e) {
+            // Handle any potential exceptions
+        }
+        
+        auto end = chrono::high_resolution_clock::now();
+        chrono::duration<double, milli> duration = end - start;
+        double time = duration.count();
+        current = time;
+        if (time < fastest) fastest = time;
+        if (time > slowest) slowest = time;
+    }
+};
+class TimSort : public Algorithm {
+    private:
+    static const int RUN = 32;
+
+    void insertionSort(vector<int>& arr, int left, int right) {
+        for (int i = left + 1; i <= right; i++) {
+            int temp = arr[i];
+            int j = i - 1;
+            while (j >= left && arr[j] > temp) {
+                arr[j + 1] = arr[j];
+                j--;
+            }
+            arr[j + 1] = temp;
+        }
+    }
+
+    void merge(vector<int>& arr, int l, int m, int r) {
+        // Validate input parameters
+        if (l < 0 || m < l || r < m || r >= (int)arr.size()) return;
+
+        int len1 = m - l + 1, len2 = r - m;
+        vector<int> left(len1), right(len2);
+
+        // Copy data to temp arrays
+        for (int i = 0; i < len1; i++) {
+            left[i] = arr[l + i];
+        }
+        for (int i = 0; i < len2; i++) {
+            right[i] = arr[m + 1 + i];
+        }
+
+        int i = 0, j = 0, k = l;
+
+        // Merge temp arrays back into arr[l..r]
+        while (i < len1 && j < len2) {
+            if (left[i] <= right[j]) {
+                arr[k] = left[i];
+                i++;
+            } else {
+                arr[k] = right[j];
+                j++;
+            }
+            k++;
+        }
+
+        // Copy remaining elements of left[]
+        while (i < len1) {
+            arr[k] = left[i];
+            i++;
+            k++;
+        }
+
+        // Copy remaining elements of right[]
+        while (j < len2) {
+            arr[k] = right[j];
+            j++;
+            k++;
+        }
+    }
+
+    void timSort(vector<int>& arr) {
+        if (arr.empty()) return;
+        
+        int n = arr.size();
+
+        // Sort individual subarrays of size RUN
+        for (int i = 0; i < n; i += RUN) {
+            insertionSort(arr, i, min((i + RUN - 1), (n - 1)));
+        }
+
+        // Start merging from RUN size
+        for (int size = RUN; size < n; size = 2 * size) {
+            for (int left = 0; left < n; left += 2 * size) {
+                int mid = min(left + size - 1, n - 1);
+                int right = min(left + 2 * size - 1, n - 1);
+                
+                // Only merge if there are elements to merge
+                if (mid < right) {
+                    merge(arr, left, mid, right);
+                }
+            }
+        }
+    }
+
+    public:
+    TimSort() : Algorithm("Tim Sort", 9) {};
+
+    void sort(vector<int> a) {
+        auto start = chrono::high_resolution_clock::now();
+        
+        try {
+            vector<int> temp = a;
+            timSort(temp);
+            // Store result back in a if needed
+            a = temp;
+        } catch (const std::exception& e) {
+            // Log error if needed
+        }
+        
+        auto end = chrono::high_resolution_clock::now();
+        chrono::duration<double, milli> duration = end - start;
+        double time = duration.count();
+        current = time;
+        if (time < fastest) fastest = time;
+        if (time > slowest) slowest = time;
+    }
+};
+class CombSort : public Algorithm {
+    private:
+    int getNextGap(int gap) {
+        // Shrink gap by shrink factor
+        gap = (gap * 10) / 13;
+        if (gap < 1) return 1;
+        return gap;
+    }
+
+    void combSort(vector<int>& arr) {
+        int n = arr.size();
+        int gap = n;
+        bool swapped = true;
+
+        while (gap != 1 || swapped) {
+            gap = getNextGap(gap);
+            swapped = false;
+
+            for (int i = 0; i < n - gap; i++) {
+                if (arr[i] > arr[i + gap]) {
+                    swap(arr[i], arr[i + gap]);
+                    swapped = true;
+                }
+            }
+        }
+    }
+
+    public:
+    CombSort() : Algorithm("Comb Sort", 9) {};
+
+    void sort(vector<int> a) {
+        auto start = chrono::high_resolution_clock::now();
+        
+        try {
+            vector<int> temp = a;
+            combSort(temp);
+            a = temp;
+        } catch (const std::exception& e) {
+            // Log error if needed
+        }
+        
+        auto end = chrono::high_resolution_clock::now();
+        chrono::duration<double, milli> duration = end - start;
+        double time = duration.count();
+        current = time;
+        if (time < fastest) fastest = time;
+        if (time > slowest) slowest = time;
+    }
+};
+
+class PigeonholeSort : public Algorithm {
+    private:
+    void pigeonholeSort(vector<int>& arr) {
+        int n = arr.size();
+        if (n == 0) return;
+
+        // Find min and max values
+        int min = arr[0], max = arr[0];
+        for (int i = 1; i < n; i++) {
+            if (arr[i] < min) min = arr[i];
+            if (arr[i] > max) max = arr[i];
+        }
+        int range = max - min + 1;
+
+        // Create pigeonholes
+        vector<vector<int>> holes(range);
+
+        // Put elements into pigeonholes
+        for (int i = 0; i < n; i++) {
+            holes[arr[i] - min].push_back(arr[i]);
+        }
+
+        // Collect elements from pigeonholes
+        int index = 0;
+        for (int i = 0; i < range; i++) {
+            for (int j = 0; j < holes[i].size(); j++) {
+                arr[index++] = holes[i][j];
+            }
+        }
+    }
+
+    public:
+    PigeonholeSort() : Algorithm("Pigeonhole Sort", 9) {};
+
+    void sort(vector<int> a) {
+        auto start = chrono::high_resolution_clock::now();
+        
+        try {
+            vector<int> temp = a;
+            pigeonholeSort(temp);
+            a = temp;
+        } catch (const std::exception& e) {
+            // Log error if needed
+        }
+        
+        auto end = chrono::high_resolution_clock::now();
+        chrono::duration<double, milli> duration = end - start;
+        double time = duration.count();
+        current = time;
+        if (time < fastest) fastest = time;
+        if (time > slowest) slowest = time;
+    }
+};
+class IntroSort : public Algorithm {
+    private:
+    void swapElements(vector<int>& arr, int i, int j) {
+        int temp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = temp;
+    }
+
+    int partition(vector<int>& arr, int low, int high) {
+        int pivot = arr[high];
+        int i = low - 1;
+        
+        for (int j = low; j <= high - 1; j++) {
+            if (arr[j] <= pivot) {
+                i++;
+                swapElements(arr, i, j);
+            }
+        }
+        swapElements(arr, i + 1, high);
+        return i + 1;
+    }
+
+    void insertionSort(vector<int>& arr, int low, int high) {
+        for (int i = low + 1; i <= high; i++) {
+            int key = arr[i];
+            int j = i - 1;
+            while (j >= low && arr[j] > key) {
+                arr[j + 1] = arr[j];
+                j--;
+            }
+            arr[j + 1] = key;
+        }
+    }
+
+    void heapify(vector<int>& arr, int n, int i) {
+        int largest = i;
+        int left = 2 * i + 1;
+        int right = 2 * i + 2;
+
+        if (left < n && arr[left] > arr[largest])
+            largest = left;
+
+        if (right < n && arr[right] > arr[largest])
+            largest = right;
+
+        if (largest != i) {
+            swapElements(arr, i, largest);
+            heapify(arr, n, largest);
+        }
+    }
+
+    void heapSort(vector<int>& arr, int low, int high) {
+        int n = high - low + 1;
+        
+        // Build heap
+        for (int i = n / 2 - 1; i >= 0; i--)
+            heapify(arr, n, i);
+
+        // Extract elements from heap
+        for (int i = n - 1; i > 0; i--) {
+            swapElements(arr, 0, i);
+            heapify(arr, i, 0);
+        }
+    }
+
+    void introSortUtil(vector<int>& arr, int low, int high, int depthLimit) {
+        int size = high - low + 1;
+
+        // If partition size is low, use insertion sort
+        if (size < 16) {
+            insertionSort(arr, low, high);
+            return;
+        }
+
+        // If depth limit is 0, use heap sort
+        if (depthLimit == 0) {
+            heapSort(arr, low, high);
+            return;
+        }
+
+        // Otherwise use quicksort
+        int pivot = partition(arr, low, high);
+        introSortUtil(arr, low, pivot - 1, depthLimit - 1);
+        introSortUtil(arr, pivot + 1, high, depthLimit - 1);
+    }
+
+    void introSort(vector<int>& arr) {
+        int n = arr.size();
+        if (n <= 1) return;
+        
+        // Calculate depth limit as 2*log(n)
+        int depthLimit = 2 * floor(log2(n));
+        introSortUtil(arr, 0, n - 1, depthLimit);
+    }
+
+    public:
+    IntroSort() : Algorithm("Intro Sort", 9) {};
+
+    void sort(vector<int> a) {
+        auto start = chrono::high_resolution_clock::now();
+        
+        try {
+            vector<int> temp = a;
+            introSort(temp);
+            a = temp;
+        } catch (const std::exception& e) {
+            // Log error if needed
+        }
+        
+        auto end = chrono::high_resolution_clock::now();
+        chrono::duration<double, milli> duration = end - start;
+        double time = duration.count();
+        current = time;
+        if (time < fastest) fastest = time;
+        if (time > slowest) slowest = time;
+    }
+};
 
 class CountingSort : public Algorithm {
     public:
@@ -540,33 +933,40 @@ class CountingSort : public Algorithm {
     void sort(vector<int> a) {
         auto start = chrono::high_resolution_clock::now();
 
-        vector<int> temp = a;  // Create working copy
-        int N = temp.size();
-        
-        // Find maximum element
-        int M = 0;
-        for (int i = 0; i < N; i++)
-            M = max(M, temp[i]);
+        try {
+            vector<int> temp = a;  // Create working copy
+            int N = temp.size();
             
-        vector<int> countArray(M + 1, 0);
-        vector<int> outputArray(N);
-        
-        // Store count of each element
-        for (int i = 0; i < N; i++)
-            countArray[temp[i]]++;
+            // Find minimum and maximum elements
+            int minVal = temp[0], maxVal = temp[0];
+            for (int i = 0; i < N; i++) {
+                minVal = min(minVal, temp[i]);
+                maxVal = max(maxVal, temp[i]);
+            }
             
-        // Modify countArray to store actual positions
-        for (int i = 1; i <= M; i++)
-            countArray[i] += countArray[i - 1];
+            // Create counting array for the range of values
+            int range = maxVal - minVal + 1;
+            vector<int> countArray(range, 0);
+            vector<int> outputArray(N);
             
-        // Build output array
-        for (int i = N - 1; i >= 0; i--) {
-            outputArray[countArray[temp[i]] - 1] = temp[i];
-            countArray[temp[i]]--;
+            // Store count of each element
+            for (int i = 0; i < N; i++)
+                countArray[temp[i] - minVal]++;
+                
+            // Modify countArray to store actual positions
+            for (int i = 1; i < range; i++)
+                countArray[i] += countArray[i - 1];
+                
+            // Build output array
+            for (int i = N - 1; i >= 0; i--) {
+                outputArray[countArray[temp[i] - minVal] - 1] = temp[i];
+                countArray[temp[i] - minVal]--;
+            }
+            
+            temp = outputArray;
+        } catch (const std::exception& e) {
+            // Handle any potential exceptions
         }
-        
-        // Copy back to working array
-        temp = outputArray;
         
         auto end = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> duration = end - start;
@@ -592,6 +992,11 @@ public:
         algorithms.push_back(new CycleSort());
         algorithms.push_back(new ThreeWayMergeSort());
         algorithms.push_back(new CountingSort());
+        algorithms.push_back(new BucketSort());
+        algorithms.push_back(new TimSort());
+        algorithms.push_back(new CombSort());
+        algorithms.push_back(new PigeonholeSort());
+        algorithms.push_back(new IntroSort());
     }
 
     ~Tournament() {
@@ -662,7 +1067,7 @@ public:
         // Display the leaderboard with positions
         std::cout << "\nPoints Table:\n";
     std::cout << "Pos\tAlgo\t\tMatches\tWins\tLosses\tTies\tFastest\t\tSlowest\t\tLast\t\tPoints\n";
-    std::cout << "---------------------------------------------------------\n";
+    std::cout << "--------------------------------------------------------------------------------\n";
     
     int position = 1;
     for (const auto &alg : sortedAlgorithms) {
