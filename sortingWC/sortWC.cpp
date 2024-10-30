@@ -13,9 +13,21 @@ class Algorithm {
     double fastest = 100000;
     double slowest = 0;
     double current = 0;
+    int id;
+    int matches;
+    int points;
+    int wins;
+    int losses;
+    int ties;
+    double totalTime;
 
-    Algorithm(string n) {
+    Algorithm(string n, int i) {
         name = n;
+        id = i;
+    }
+
+    virtual void sort(vector<int> a){
+        return;
     }
 
     void display(){
@@ -25,7 +37,7 @@ class Algorithm {
 
 class BubbleSort : public Algorithm {
     public:
-    BubbleSort() : Algorithm("Bubble Sort") {};
+    BubbleSort() : Algorithm("Bubble Sort", 2) {};
 
     void sort(vector<int> a){
         auto start = chrono::high_resolution_clock::now();
@@ -54,7 +66,7 @@ class BubbleSort : public Algorithm {
 
 class SelectionSort : public Algorithm {
     public:
-    SelectionSort() : Algorithm("Selection Sort") {};
+    SelectionSort() : Algorithm("Selection Sort", 1) {};
 
     void sort(vector<int> a){
         auto start = chrono::high_resolution_clock::now();
@@ -132,7 +144,7 @@ class MergeSort : public Algorithm {
     }
 
     public:
-    MergeSort() : Algorithm("Merge Sort") {};
+    MergeSort() : Algorithm("Merge Sort", 3) {};
 
     void sort(vector<int> a){
         auto start = chrono::high_resolution_clock::now();
@@ -152,7 +164,7 @@ class MergeSort : public Algorithm {
 
 class InsertionSort : public Algorithm {
     public:
-    InsertionSort() : Algorithm("Insertion Sort") {};
+    InsertionSort() : Algorithm("Insertion Sort", 4) {};
 
     void sort(vector<int> a){
         auto start = chrono::high_resolution_clock::now();
@@ -163,8 +175,9 @@ class InsertionSort : public Algorithm {
             int key = a[i];
             int j = i - 1;
 
-            while(j-->= 0 && a[j] > key){
+            while(j >= 0 && a[j] > key){
                 a[j + 1] = a[j];
+                j--;
             }
             a[j + 1] = key;
         }
@@ -180,7 +193,7 @@ class InsertionSort : public Algorithm {
 };
 class CycleSort : public Algorithm {
     public:
-    CycleSort() : Algorithm("Cycle Sort") {};
+    CycleSort() : Algorithm("Cycle Sort", 5) {};
 
     void sort(vector<int> a){
         auto start = chrono::high_resolution_clock::now();
@@ -254,7 +267,7 @@ class QuickSort : public Algorithm {
     }
 
     public:
-    QuickSort() : Algorithm("Quick Sort") {};
+    QuickSort() : Algorithm("Quick Sort", 6) {};
 
 
     void sort(vector<int> a){
@@ -302,7 +315,7 @@ class HeapSort : public Algorithm {
 
 
     public:
-    HeapSort() : Algorithm("Heap Sort") {};
+    HeapSort() : Algorithm("Heap Sort", 7) {};
 
 
     void sort(vector<int> a){
@@ -322,6 +335,109 @@ class HeapSort : public Algorithm {
     }
 };
 
+
+class Tournament {
+
+     vector<Algorithm*> algorithms;
+
+public:
+    Tournament() {
+        algorithms.push_back(new SelectionSort());
+        algorithms.push_back(new BubbleSort());
+        algorithms.push_back(new MergeSort());
+        algorithms.push_back(new InsertionSort());
+        algorithms.push_back(new QuickSort());
+        algorithms.push_back(new HeapSort());
+        algorithms.push_back(new CycleSort());
+    }
+
+    ~Tournament() {
+        for (auto algo : algorithms) {
+            delete algo; 
+        }
+    }
+
+    void simluateMatch(Algorithm* team1, Algorithm* team2, vector<int> a){
+        team1->matches++;
+        team2->matches++;
+        team1->sort(a);
+        team2->sort(a);
+
+        cout << team1->name << "\tvs\t" << team2->name << endl;
+        cout << std::setprecision(7) << team1->current / 1000 << "s" << "\t\t" << std::setprecision(7) << team2->current / 1000 << "s" << endl;
+
+        cout << "WINNER: ";
+
+        if(team1->current < team2->current) {
+            cout << team1->name << endl;
+            team1->points += 3;
+            team1->wins++;
+            team2->losses++;
+        }
+        else if(team2->current < team1->current){
+            cout << team2->name << endl;
+            team2->points += 3;
+            team2->wins++;
+            team1->losses++;
+        } 
+        else if (team1->current == team2->current){
+            cout << "TIED" << endl;
+            team1->points += 1;
+            team2->points += 1;
+            team1->ties++;
+            team2->ties++;
+        }
+    }
+
+    void roundRobin(vector<int> a){
+        int matchNo = 1;
+        for (size_t i = 0; i < algorithms.size(); i++){
+            for(size_t j = 0; j < algorithms.size(); j++){
+                if( i != j){
+                cout << "MATCH " << matchNo << ": " <<  algorithms[i]->name << " vs " << algorithms[j]->name << endl;
+                simluateMatch(algorithms[i], algorithms[j], a);
+                cout << endl;
+                matchNo++;
+                }
+            }
+            cout << "End of Round " << i + 1 << endl;
+            printLeaderboard();
+            cout << endl;
+        }
+    }
+
+
+
+    void printLeaderboard() {
+        // Create a copy of the algorithms vector
+        vector<Algorithm*> sortedAlgorithms = algorithms;
+
+        // Sort the copied vector in descending order based on points
+        sort(sortedAlgorithms.begin(), sortedAlgorithms.end(), [](Algorithm* a, Algorithm* b) {
+            return a->points > b->points;
+        });
+
+        // Display the leaderboard with positions
+        std::cout << "\nPoints Table:\n";
+    std::cout << "Pos\tAlgo\t\tMatches\tWins\tLosses\tTies\tFastest\t\tSlowest\t\tLast\t\tPoints\n";
+    std::cout << "---------------------------------------------------------\n";
+    
+    int position = 1;
+    for (const auto &alg : sortedAlgorithms) {
+        std::cout << std::setw(3) << position++ << "\t" 
+                  << std::setw(12) << alg->name << "\t" 
+                  << std::setw(7) << alg->matches << "\t" 
+                  << std::setw(4) << alg->wins << "\t" 
+                  << std::setw(6) << alg->losses << "\t" 
+                  << std::setw(5) << alg->ties << "\t" 
+                  << std::setw(10) << std::fixed << std::setprecision(7) << (alg->fastest / 1000) << "s\t" 
+                  << std::setw(10) << std::fixed << std::setprecision(7) << (alg->slowest / 1000) << "s\t" 
+                  << std::setw(10) << std::fixed << std::setprecision(7) << (alg->current / 1000) << "s\t" 
+                  << alg->points << "\n";
+    }
+    }
+
+};
 
 
 
@@ -343,31 +459,8 @@ int main(void){
     string filename = "input.txt";
     readFile(filename, arr);
 
-    MergeSort ms;
-    ms.sort(arr);
-    ms.display();
-
-    BubbleSort bs;
-    bs.sort(arr);
-    bs.display();
-
-    SelectionSort ss;
-    ss.sort(arr);
-    ss.display();
-
-    InsertionSort is;
-    is.sort(arr);
-    is.display();
-
-    QuickSort qs;
-    qs.sort(arr);
-    qs.display();
-
-    HeapSort hs;
-    hs.sort(arr);
-    hs.display();
-
-    CycleSort cs;
-    cs.sort(arr);
-    cs.display();
+   Tournament tourney;
+   tourney.roundRobin(arr);
+   tourney.roundRobin(arr);
+   tourney.printLeaderboard();
 }
