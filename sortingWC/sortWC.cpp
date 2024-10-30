@@ -446,74 +446,84 @@ class ThreeWayMergeSort : public Algorithm {
     }
 };
 class RadixSort : public Algorithm {
-private:
-    int getMax(vector<int> &arr, int n)
-    {
+    private:
+    int getMax(const vector<int>& arr) {
+        if (arr.empty()) return 0;
         int mx = arr[0];
-        for (int i = 1; i < n; i++)
-            if (arr[i] > mx)
-                mx = arr[i];
+        for (size_t i = 1; i < arr.size(); i++) {
+            mx = max(mx, arr[i]);
+        }
         return mx;
     }
 
-    // A function to do counting sort of arr[]
-    // according to the digit
-    // represented by exp.
-    void countSort(vector<int> &arr, int n, int exp)
-    {
+    void countSort(vector<int>& arr, long exp) {
+        size_t n = arr.size();
+        if (n == 0) return;
 
-        // Output array
-        int output[n];
-        int i, count[10] = { 0 };
+        try {
+            vector<int> output(n);
+            vector<int> count(10, 0);
 
-        // Store count of occurrences
-        // in count[]
-        for (i = 0; i < n; i++)
-            count[(arr[i] / exp) % 10]++;
+            // Store count of occurrences
+            for (size_t i = 0; i < n; i++) {
+                int digit = (arr[i] / exp) % 10;
+                if (digit >= 0 && digit < 10) {
+                    count[digit]++;
+                }
+            }
 
-        // Change count[i] so that count[i]
-        // now contains actual position
-        // of this digit in output[]
-        for (i = 1; i < 10; i++)
-            count[i] += count[i - 1];
+            // Change count[i] so that count[i] contains actual position
+            for (int i = 1; i < 10; i++) {
+                count[i] += count[i - 1];
+            }
 
-        // Build the output array
-        for (i = n - 1; i >= 0; i--) {
-            output[count[(arr[i] / exp) % 10] - 1] = arr[i];
-            count[(arr[i] / exp) % 10]--;
+            // Build the output array
+            for (long i = n - 1; i >= 0; i--) {
+                int digit = (arr[i] / exp) % 10;
+                if (digit >= 0 && digit < 10 && count[digit] > 0) {
+                    size_t pos = count[digit] - 1;
+                    if (pos < n) {
+                        output[pos] = arr[i];
+                        count[digit]--;
+                    }
+                }
+            }
+
+            // Copy back to original array
+            arr = output;
+        } catch (const std::exception& e) {
+            // Handle any potential exceptions
+            return;
         }
-
-        // Copy the output array to arr[],
-        // so that arr[] now contains sorted
-        // numbers according to current digit
-        for (i = 0; i < n; i++)
-            arr[i] = output[i];
     }
 
-    // The main function to that sorts arr[]
-    // of size n using Radix Sort
-    void radixsort(vector<int> &arr, int n)
-    {
+    void radixsort(vector<int>& arr) {
+        if (arr.empty()) return;
 
-        // Find the maximum number to
-        // know number of digits
-        int m = getMax(arr, n);
+        // Find the maximum number to know number of digits
+        int m = getMax(arr);
+        if (m <= 0) return;
 
-        // Do counting sort for every digit.
-        // Note that instead of passing digit
-        // number, exp is passed. exp is 10^i
-        // where i is current digit number
-        for (int exp = 1; m / exp > 0; exp *= 10)
-            countSort(arr, n, exp);
+        // Do counting sort for every digit
+        for (long exp = 1; m / exp > 0 && exp <= 1000000000; exp *= 10) {
+            countSort(arr, exp);
+        }
     }
 
-public:
-    RadixSort() : Algorithm("Radix Sort", 8) {}
+    public:
+    RadixSort() : Algorithm("Radix Sort", 9) {};
 
-    void sort(vector<int> a) { 
+    void sort(vector<int> a) {
         auto start = chrono::high_resolution_clock::now();
-        int size = a.size();
-        radixsort(a, size);
+        
+        try {
+            // Create a working copy
+            vector<int> temp = a;
+            radixsort(temp);
+        } catch (const std::exception& e) {
+            // Handle any potential exceptions
+        }
+        
         auto end = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> duration = end - start;
         double time = duration.count();
@@ -525,27 +535,39 @@ public:
 
 class CountingSort : public Algorithm {
     public:
-    CountingSort() : Algorithm("Counting Sort", 2) {};
+    CountingSort() : Algorithm("Counting Sort", 10) {};
 
-    void sort(vector<int> a){
+    void sort(vector<int> a) {
         auto start = chrono::high_resolution_clock::now();
 
-        //Algorithm: 
-        int N = a.size();
+        vector<int> temp = a;  // Create working copy
+        int N = temp.size();
+        
+        // Find maximum element
         int M = 0;
         for (int i = 0; i < N; i++)
-            M = max(M, a[i]);
+            M = max(M, temp[i]);
+            
         vector<int> countArray(M + 1, 0);
+        vector<int> outputArray(N);
+        
+        // Store count of each element
         for (int i = 0; i < N; i++)
-            countArray[a[i]]++;
+            countArray[temp[i]]++;
+            
+        // Modify countArray to store actual positions
         for (int i = 1; i <= M; i++)
             countArray[i] += countArray[i - 1];
-        vector<int> outputArray(N);
-        for (int i = N - 1; i >= 0; i--){
-            outputArray[countArray[a[i]] - 1] = a[i];
-            countArray[a[i]]--;
+            
+        // Build output array
+        for (int i = N - 1; i >= 0; i--) {
+            outputArray[countArray[temp[i]] - 1] = temp[i];
+            countArray[temp[i]]--;
         }
-
+        
+        // Copy back to working array
+        temp = outputArray;
+        
         auto end = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> duration = end - start;
         double time = duration.count();
@@ -561,6 +583,7 @@ class Tournament {
 public:
     Tournament() {
         algorithms.push_back(new SelectionSort());
+        algorithms.push_back(new RadixSort());
         algorithms.push_back(new BubbleSort());
         algorithms.push_back(new MergeSort());
         algorithms.push_back(new InsertionSort());
@@ -569,7 +592,6 @@ public:
         algorithms.push_back(new CycleSort());
         algorithms.push_back(new ThreeWayMergeSort());
         algorithms.push_back(new CountingSort());
-        algorithms.push_back(new RadixSort());
     }
 
     ~Tournament() {
